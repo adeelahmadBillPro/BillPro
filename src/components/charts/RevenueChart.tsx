@@ -32,7 +32,7 @@ function formatAmount(value: number): string {
 
 export default function RevenueChart({ data, lang }: RevenueChartProps) {
   return (
-    <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-6">
+    <div className="bg-white rounded-2xl border border-gray-200/60 shadow-sm p-6">
       <h3 className={`text-lg font-semibold text-gray-900 mb-4 ${lang === "ur" ? "font-urdu" : ""}`}>
         {t("dash_revenue_trend", lang)}
       </h3>
@@ -54,7 +54,7 @@ export default function RevenueChart({ data, lang }: RevenueChartProps) {
             <Bar
               dataKey="paid"
               name={t("status_paid", lang)}
-              fill="#0f766e"
+              fill="#059669"
               radius={[4, 4, 0, 0]}
             />
             <Bar

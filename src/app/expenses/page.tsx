@@ -15,11 +15,15 @@ import {
   deleteExpense,
   ensureDefaultCategories,
   getExpenseStats,
+  logActivity,
 } from "@/lib/supabase/database";
 import { t, formatPKR, formatDate } from "@/lib/i18n";
 import { hasPermission } from "@/lib/permissions";
+import { useToast } from "@/components/Toast";
+import { useConfirm } from "@/components/ConfirmDialog";
 import type { Expense, ExpenseCategory, PaymentMethod } from "@/types";
-import { Plus, Search, Pencil, Trash2, Settings2 } from "lucide-react";
+import { Plus, Search, Pencil, Trash2, Settings2, Wallet } from "lucide-react";
+import EmptyState from "@/components/EmptyState";
 
 const PAYMENT_METHODS: { value: PaymentMethod; labelKey: string }[] = [
   { value: "cash", labelKey: "pay_cash" },
@@ -30,7 +34,9 @@ const PAYMENT_METHODS: { value: PaymentMethod; labelKey: string }[] = [
 
 export default function ExpensesPage() {
   const { lang } = useLanguage();
-  const { business, role, loading: authLoading } = useAuth();
+  const { user, business, role, loading: authLoading } = useAuth();
+  const { showToast } = useToast();
+  const { confirm } = useConfirm();
   const canCreate = hasPermission(role, "create");
   const canDelete = hasPermission(role, "delete");
 
@@ -55,6 +61,7 @@ export default function ExpensesPage() {
     notes: "",
   });
   const [saving, setSaving] = useState(false);
+  const [formErrors, setFormErrors] = useState<Record<string, string>>({});
 
   useEffect(() => {
     if (authLoading || !business) {
@@ -82,6 +89,7 @@ export default function ExpensesPage() {
 
   function openAdd() {
     setEditing(null);
+    setFormErrors({});
     setForm({
       description_en: "",
       description_ur: "",
@@ -97,6 +105,7 @@ export default function ExpensesPage() {
 
   function openEdit(exp: Expense) {
     setEditing(exp);
+    setFormErrors({});
     setForm({
       description_en: exp.description_en,
       description_ur: exp.description_ur || "",
@@ -111,7 +120,11 @@ export default function ExpensesPage() {
   }
 
   async function handleSave() {
-    if (!business || !form.description_en || !form.amount) return;
+    const errs: Record<string, string> = {};
+    if (!form.description_en.trim()) errs.description_en = lang === "ur" ? "تفصیل ضروری ہے" : "Description is required";
+    if (!form.amount || parseFloat(form.amount) <= 0) errs.amount = lang === "ur" ? "رقم ضروری ہے" : "Amount must be greater than 0";
+    setFormErrors(errs);
+    if (Object.keys(errs).length > 0 || !business) return;
     setSaving(true);
 
     const payload = {
@@ -128,18 +141,31 @@ export default function ExpensesPage() {
 
     if (editing) {
       await updateExpense(editing.id, payload);
+      if (user) await logActivity(business.id, user.id, "updated", "expense", form.description_en, editing.id);
     } else {
       await createExpense(payload);
+      if (user) await logActivity(business.id, user.id, "created", "expense", form.description_en);
     }
 
     setSaving(false);
     setModalOpen(false);
+    showToast(editing ? (lang === "ur" ? "خرچہ اپ ڈیٹ ہو گیا" : "Expense updated") : (lang === "ur" ? "خرچہ شامل ہو گیا" : "Expense added"), "success");
     loadData();
   }
 
   async function handleDelete(id: string) {
-    if (!confirm(t("common_confirm_delete", lang))) return;
+    const exp = expenses.find((e: any) => e.id === id);
+    const ok = await confirm({
+      title: lang === "ur" ? "خرچہ حذف کریں؟" : "Delete Expense?",
+      message: lang === "ur" ? `کیا آپ واقعی "${exp?.description_en || ""}" حذف کرنا چاہتے ہیں؟` : `Are you sure you want to delete "${exp?.description_en || ""}"?`,
+      confirmText: lang === "ur" ? "حذف کریں" : "Delete",
+      cancelText: t("common_cancel", lang),
+      variant: "danger",
+    });
+    if (!ok) return;
     await deleteExpense(id);
+    if (user && business) await logActivity(business.id, user.id, "deleted", "expense", exp?.description_en || "", id);
+    showToast(lang === "ur" ? "خرچہ حذف ہو گیا" : "Expense deleted", "success");
     loadData();
   }
 
@@ -184,11 +210,11 @@ export default function ExpensesPage() {
 
         {/* Stats */}
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          <div className="bg-white rounded-xl p-5 border border-gray-200 shadow-sm">
+          <div className="bg-white rounded-2xl p-5 border border-gray-200/60 shadow-sm">
             <p className={`text-sm text-muted ${lang === "ur" ? "font-urdu" : ""}`}>{t("exp_total", lang)}</p>
             <p className="text-2xl font-bold text-gray-900 mt-1">{formatPKR(stats.total)}</p>
           </div>
-          <div className="bg-white rounded-xl p-5 border border-gray-200 shadow-sm">
+          <div className="bg-white rounded-2xl p-5 border border-gray-200/60 shadow-sm">
             <p className={`text-sm text-muted ${lang === "ur" ? "font-urdu" : ""}`}>{t("exp_this_month", lang)}</p>
             <p className="text-2xl font-bold text-gray-900 mt-1">{formatPKR(stats.this_month)}</p>
           </div>
@@ -221,7 +247,7 @@ export default function ExpensesPage() {
         </div>
 
         {/* Expenses Table */}
-        <div className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-x-auto">
+        <div className="bg-white rounded-2xl border border-gray-200/60 shadow-sm overflow-x-auto">
           <table className="w-full">
             <thead>
               <tr className="border-b border-gray-200">
@@ -235,9 +261,22 @@ export default function ExpensesPage() {
             </thead>
             <tbody>
               {loading ? (
-                <tr><td colSpan={6} className="p-8 text-center text-muted text-sm">{t("common_loading", lang)}</td></tr>
+                Array.from({ length: 5 }).map((_, i) => (
+                  <tr key={i} className="border-b border-gray-100">
+                    {Array.from({ length: 6 }).map((_, j) => (
+                      <td key={j} className="p-4"><div className="skeleton h-4 w-full" /></td>
+                    ))}
+                  </tr>
+                ))
               ) : filtered.length === 0 ? (
-                <tr><td colSpan={6} className="p-8 text-center text-muted text-sm">{t("common_no_data", lang)}</td></tr>
+                <tr><td colSpan={6}>
+                  <EmptyState
+                    icon={Wallet}
+                    title={lang === "ur" ? "کوئی خرچہ نہیں ملا" : "No expenses found"}
+                    description={lang === "ur" ? "اپنا پہلا خرچہ شامل کریں" : "Add your first expense to start tracking"}
+                    action={canCreate ? { label: t("exp_add", lang), onClick: openAdd } : undefined}
+                  />
+                </td></tr>
               ) : (
                 filtered.map((exp: any) => (
                   <tr key={exp.id} className="border-b border-gray-100 hover:bg-gray-50 transition-colors">
@@ -292,15 +331,15 @@ export default function ExpensesPage() {
         <div className="space-y-4">
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
-              {t("exp_description", lang)} (English) *
+              {t("exp_description", lang)} (English) <span className="text-danger">*</span>
             </label>
             <input
               type="text"
               value={form.description_en}
-              onChange={(e) => setForm({ ...form, description_en: e.target.value })}
-              className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm"
-              required
+              onChange={(e) => { setForm({ ...form, description_en: e.target.value }); setFormErrors(prev => { const n = { ...prev }; delete n.description_en; return n; }); }}
+              className={`w-full border rounded-lg px-3 py-2 text-sm transition-colors ${formErrors.description_en ? "border-red-400 focus:ring-red-200 bg-red-50" : "border-gray-200 focus:ring-primary/20"}`}
             />
+            {formErrors.description_en && <p className="text-xs text-danger mt-1 animate-shake">{formErrors.description_en}</p>}
           </div>
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1 font-urdu">
@@ -314,18 +353,18 @@ export default function ExpensesPage() {
               dir="rtl"
             />
           </div>
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">{t("exp_amount", lang)} (PKR) *</label>
+              <label className="block text-sm font-medium text-gray-700 mb-1">{t("exp_amount", lang)} (PKR) <span className="text-danger">*</span></label>
               <input
                 type="number"
                 value={form.amount}
-                onChange={(e) => setForm({ ...form, amount: e.target.value })}
-                className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm"
+                onChange={(e) => { setForm({ ...form, amount: e.target.value }); setFormErrors(prev => { const n = { ...prev }; delete n.amount; return n; }); }}
+                className={`w-full border rounded-lg px-3 py-2 text-sm transition-colors ${formErrors.amount ? "border-red-400 focus:ring-red-200 bg-red-50" : "border-gray-200 focus:ring-primary/20"}`}
                 min="0"
                 step="0.01"
-                required
               />
+              {formErrors.amount && <p className="text-xs text-danger mt-1 animate-shake">{formErrors.amount}</p>}
             </div>
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">{t("exp_date", lang)}</label>
@@ -337,7 +376,7 @@ export default function ExpensesPage() {
               />
             </div>
           </div>
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">{t("exp_category", lang)}</label>
               <select

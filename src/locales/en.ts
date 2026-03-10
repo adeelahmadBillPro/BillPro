@@ -8,8 +8,36 @@ const en = {
   nav_invoices: "Invoices",
   nav_customers: "Customers",
   nav_payments: "Payments",
+  nav_products: "Products",
+  nav_recurring: "Recurring",
   nav_settings: "Settings",
   nav_logout: "Logout",
+
+  // Recurring
+  rec_add: "New Recurring",
+  rec_edit: "Edit Recurring",
+  rec_frequency: "Frequency",
+  rec_start: "Start Date",
+  rec_end: "End Date (optional)",
+
+  // Products
+  prod_add: "Add Product",
+  prod_edit: "Edit Product",
+  prod_name_en: "Product Name (EN)",
+  prod_name_ur: "پروڈکٹ کا نام (UR)",
+  prod_desc_en: "Description (EN)",
+  prod_desc_ur: "تفصیل (UR)",
+  prod_price: "Unit Price",
+  prod_unit: "Unit",
+  prod_active: "Active (available for invoices)",
+  prod_pick: "Quick fill from product",
+
+  // Theme
+  theme_dark: "Dark Mode",
+  theme_light: "Light Mode",
+
+  // Reminders
+  rem_send: "Send Reminder",
 
   // Dashboard
   dash_welcome: "Welcome back",
@@ -55,6 +83,8 @@ const en = {
   inv_item_total: "Total",
   inv_print: "Print Invoice",
   inv_download: "Download PDF",
+  inv_download_pdf: "PDF",
+  inv_share_whatsapp: "WhatsApp",
   inv_send: "Send Invoice",
   inv_mark_paid: "Mark as Paid",
 
@@ -76,6 +106,23 @@ const en = {
   cust_city: "City",
   cust_balance: "Balance",
   cust_total_invoices: "Total Invoices",
+
+  // Ledger
+  ledger_view: "View Ledger",
+  ledger_export: "Export Excel",
+  ledger_details: "Customer Details",
+  ledger_total_invoiced: "Total Invoiced",
+  ledger_total_paid: "Total Paid",
+  ledger_invoices: "invoices",
+  ledger_payments: "payments",
+  ledger_balance: "Balance",
+  ledger_date: "Date",
+  ledger_description: "Description",
+  ledger_ref: "Reference",
+  ledger_debit: "Debit",
+  ledger_credit: "Credit",
+  ledger_totals: "Totals",
+  ledger_download_pdf: "Download PDF",
 
   // Payments
   pay_title: "Payments",
@@ -142,6 +189,7 @@ const en = {
   team_invite_link: "Invite Link",
   team_copy_link: "Copy Link",
   team_link_copied: "Link copied!",
+  team_share_whatsapp: "WhatsApp",
   team_invite_email: "Email",
   team_invite_expires: "Expires in 7 days",
   team_no_members: "No team members yet",
@@ -179,6 +227,79 @@ const en = {
   common_confirm_delete: "Are you sure you want to delete this?",
   common_pkr: "PKR",
   common_currency_symbol: "Rs.",
+
+  // Invoice Edit / Duplicate
+  inv_duplicate: "Duplicate",
+
+  // Activity Log
+  nav_activity: "Activity Log",
+
+  // Backup
+  nav_backup: "Data Backup",
+
+  // PWA
+  pwa_install_title: "Install BillPro",
+  pwa_install_desc: "Add to home screen for quick access offline",
+  pwa_install_btn: "Install App",
+
+  // Stock Tracking
+  prod_stock: "Stock",
+
+  // Bulk Actions
+  bulk_selected: "selected",
+
+  // Customer Portal
+  portal_link: "Portal",
+  portal_copied: "Copied!",
+  portal_generate: "Generate portal link",
+
+  // QR Code
+  qr_scan_to_pay: "Scan to view invoice details",
+
+  // Email Invoice
+  inv_email: "Email",
+
+  // Multi-currency
+  settings_currency: "Currency",
+  settings_template: "Invoice Template",
+
+  // Invoice Templates
+  tpl_classic: "Classic",
+  tpl_modern: "Modern",
+  tpl_minimal: "Minimal",
+
+  // Customer Import
+  cust_import: "Import",
+  cust_import_title: "Import Customers",
+  cust_import_upload: "Upload CSV or Excel file",
+  cust_import_preview: "Preview",
+  cust_import_rows: "rows found",
+  cust_import_btn: "Import All",
+  cust_import_success: "customers imported",
+
+  // Reminders Widget
+  dash_due_soon: "Due Soon",
+  dash_due_in: "due in",
+  dash_days: "days",
+  dash_today: "today",
+
+  // Audit Trail
+  audit_history: "History",
+  audit_no_history: "No history yet",
+
+  // Subscription
+  sub_title: "Subscription",
+  sub_current_plan: "Current Plan",
+  sub_trial: "Free Trial",
+  sub_trial_days_left: "days left in trial",
+  sub_trial_expired: "Trial Expired",
+  sub_active: "Active",
+  sub_upgrade: "Upgrade Now",
+  sub_view_plans: "View Plans",
+  sub_contact: "Contact to Subscribe",
+  sub_popular: "Most Popular",
+  sub_per_month: "/month",
+  nav_admin: "Super Admin",
 } as const;
 
 export default en;

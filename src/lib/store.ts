@@ -4,6 +4,9 @@ import { useState, useEffect, useCallback } from "react";
 import type { Language } from "@/types";
 
 const LANG_KEY = "billpro_lang";
+const THEME_KEY = "billpro_theme";
+
+export type Theme = "light" | "dark";
 
 export function useLanguage() {
   const [lang, setLangState] = useState<Language>("en");
@@ -27,4 +30,30 @@ export function useLanguage() {
   }, [lang, setLang]);
 
   return { lang, setLang, toggleLang };
+}
+
+export function useTheme() {
+  const [theme, setThemeState] = useState<Theme>("light");
+
+  useEffect(() => {
+    // Read from DOM (set by anti-flash script) rather than localStorage
+    const isDark = document.documentElement.classList.contains("dark");
+    setThemeState(isDark ? "dark" : "light");
+  }, []);
+
+  const setTheme = useCallback((newTheme: Theme) => {
+    setThemeState(newTheme);
+    localStorage.setItem(THEME_KEY, newTheme);
+    if (newTheme === "dark") {
+      document.documentElement.classList.add("dark");
+    } else {
+      document.documentElement.classList.remove("dark");
+    }
+  }, []);
+
+  const toggleTheme = useCallback(() => {
+    setTheme(theme === "light" ? "dark" : "light");
+  }, [theme, setTheme]);
+
+  return { theme, setTheme, toggleTheme, isDark: theme === "dark" };
 }

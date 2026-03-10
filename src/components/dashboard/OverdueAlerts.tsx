@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { AlertTriangle } from "lucide-react";
+import { AlertTriangle, Bell } from "lucide-react";
 import { t, formatPKR } from "@/lib/i18n";
 import type { Language } from "@/types";
 
@@ -10,12 +10,13 @@ interface OverdueInvoice {
   invoice_number: string;
   total: number;
   due_date: string;
-  customer: { name_en: string; name_ur: string } | null;
+  customer: { name_en: string; name_ur: string; phone?: string } | null;
 }
 
 interface OverdueAlertsProps {
   invoices: OverdueInvoice[];
   lang: Language;
+  businessName?: string;
 }
 
 function daysOverdue(dueDate: string): number {
@@ -24,9 +25,20 @@ function daysOverdue(dueDate: string): number {
   return Math.floor((now.getTime() - due.getTime()) / (1000 * 60 * 60 * 24));
 }
 
-export default function OverdueAlerts({ invoices, lang }: OverdueAlertsProps) {
+function sendReminder(inv: OverdueInvoice, lang: Language, businessName: string) {
+  if (!inv.customer?.phone) return;
+  const phone = inv.customer.phone.replace(/[^0-9]/g, "");
+  const intlPhone = phone.startsWith("0") ? "92" + phone.slice(1) : phone;
+  const total = Number(inv.total).toLocaleString("en-PK");
+  const msg = lang === "ur"
+    ? `محترم ${inv.customer.name_ur || inv.customer.name_en},\nانوائس ${inv.invoice_number} کی رقم Rs ${total} واجب الادا ہے۔\nبراہ کرم جلد ادائیگی کریں۔\nشکریہ — ${businessName}`
+    : `Dear ${inv.customer.name_en},\nInvoice ${inv.invoice_number} for Rs ${total} is overdue.\nPlease process payment at your earliest.\nThank you — ${businessName}`;
+  window.open(`https://wa.me/${intlPhone}?text=${encodeURIComponent(msg)}`, "_blank");
+}
+
+export default function OverdueAlerts({ invoices, lang, businessName = "BillPro" }: OverdueAlertsProps) {
   return (
-    <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-6">
+    <div className="bg-white rounded-2xl border border-gray-200/60 shadow-sm p-6">
       <div className="flex items-center gap-2 mb-4">
         <AlertTriangle className="w-5 h-5 text-danger" />
         <h3 className={`text-lg font-semibold text-gray-900 ${lang === "ur" ? "font-urdu" : ""}`}>
@@ -40,26 +52,36 @@ export default function OverdueAlerts({ invoices, lang }: OverdueAlertsProps) {
           {invoices.map((inv) => {
             const days = daysOverdue(inv.due_date);
             return (
-              <Link
-                key={inv.id}
-                href={`/invoices/${inv.id}`}
-                className="flex items-center justify-between p-3 rounded-lg bg-red-50 hover:bg-red-100 transition-colors"
-              >
-                <div>
-                  <p className="text-sm font-medium text-gray-900">{inv.invoice_number}</p>
-                  <p className={`text-xs text-muted ${lang === "ur" ? "font-urdu" : ""}`}>
-                    {lang === "ur"
-                      ? inv.customer?.name_ur || inv.customer?.name_en || "—"
-                      : inv.customer?.name_en || "—"}
-                  </p>
-                </div>
-                <div className="text-right">
-                  <p className="text-sm font-semibold text-danger">{formatPKR(Number(inv.total))}</p>
-                  <p className="text-xs text-danger">
-                    {days} {t("dash_days_overdue", lang)}
-                  </p>
-                </div>
-              </Link>
+              <div key={inv.id} className="flex items-center gap-2 p-3 rounded-lg bg-red-50">
+                <Link
+                  href={`/invoices/${inv.id}`}
+                  className="flex-1 flex items-center justify-between hover:opacity-80 transition-opacity"
+                >
+                  <div>
+                    <p className="text-sm font-medium text-gray-900">{inv.invoice_number}</p>
+                    <p className={`text-xs text-muted ${lang === "ur" ? "font-urdu" : ""}`}>
+                      {lang === "ur"
+                        ? inv.customer?.name_ur || inv.customer?.name_en || "—"
+                        : inv.customer?.name_en || "—"}
+                    </p>
+                  </div>
+                  <div className="text-right">
+                    <p className="text-sm font-semibold text-danger">{formatPKR(Number(inv.total))}</p>
+                    <p className="text-xs text-danger">
+                      {days} {t("dash_days_overdue", lang)}
+                    </p>
+                  </div>
+                </Link>
+                {inv.customer?.phone && (
+                  <button
+                    onClick={() => sendReminder(inv, lang, businessName)}
+                    className="p-2 rounded-lg bg-amber-500 text-white hover:bg-amber-600 transition-colors flex-shrink-0"
+                    title={lang === "ur" ? "یاد دہانی بھیجیں" : "Send Reminder"}
+                  >
+                    <Bell className="w-4 h-4" />
+                  </button>
+                )}
+              </div>
             );
           })}
         </div>

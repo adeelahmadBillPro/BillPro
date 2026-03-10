@@ -8,8 +8,36 @@ const ur = {
   nav_invoices: "انوائسز",
   nav_customers: "صارفین",
   nav_payments: "ادائیگیاں",
+  nav_products: "مصنوعات",
+  nav_recurring: "بار بار",
   nav_settings: "ترتیبات",
   nav_logout: "لاگ آؤٹ",
+
+  // Recurring
+  rec_add: "نئی بار بار انوائس",
+  rec_edit: "بار بار انوائس میں ترمیم",
+  rec_frequency: "تعدد",
+  rec_start: "شروع کی تاریخ",
+  rec_end: "آخری تاریخ (اختیاری)",
+
+  // Products
+  prod_add: "مصنوعات شامل کریں",
+  prod_edit: "مصنوعات میں ترمیم",
+  prod_name_en: "مصنوعات کا نام (انگریزی)",
+  prod_name_ur: "مصنوعات کا نام (اردو)",
+  prod_desc_en: "تفصیل (انگریزی)",
+  prod_desc_ur: "تفصیل (اردو)",
+  prod_price: "فی اکائی قیمت",
+  prod_unit: "اکائی",
+  prod_active: "فعال (انوائسز کے لیے دستیاب)",
+  prod_pick: "پروڈکٹ سے فوری بھریں",
+
+  // Theme
+  theme_dark: "ڈارک موڈ",
+  theme_light: "لائٹ موڈ",
+
+  // Reminders
+  rem_send: "یاد دہانی بھیجیں",
 
   // Dashboard
   dash_welcome: "خوش آمدید",
@@ -55,6 +83,8 @@ const ur = {
   inv_item_total: "کل",
   inv_print: "انوائس پرنٹ کریں",
   inv_download: "پی ڈی ایف ڈاؤنلوڈ",
+  inv_download_pdf: "پی ڈی ایف",
+  inv_share_whatsapp: "واٹس ایپ",
   inv_send: "انوائس بھیجیں",
   inv_mark_paid: "ادا شدہ نشان لگائیں",
 
@@ -76,6 +106,23 @@ const ur = {
   cust_city: "شہر",
   cust_balance: "بقایا",
   cust_total_invoices: "کل انوائسز",
+
+  // Ledger
+  ledger_view: "کھاتا دیکھیں",
+  ledger_export: "ایکسل ڈاؤنلوڈ",
+  ledger_details: "صارف کی تفصیلات",
+  ledger_total_invoiced: "کل بلنگ",
+  ledger_total_paid: "کل ادائیگی",
+  ledger_invoices: "انوائسز",
+  ledger_payments: "ادائیگیاں",
+  ledger_balance: "بقایا",
+  ledger_date: "تاریخ",
+  ledger_description: "تفصیل",
+  ledger_ref: "حوالہ",
+  ledger_debit: "ڈیبٹ",
+  ledger_credit: "کریڈٹ",
+  ledger_totals: "کل",
+  ledger_download_pdf: "پی ڈی ایف ڈاؤنلوڈ",
 
   // Payments
   pay_title: "ادائیگیاں",
@@ -142,6 +189,7 @@ const ur = {
   team_invite_link: "دعوتی لنک",
   team_copy_link: "لنک کاپی کریں",
   team_link_copied: "لنک کاپی ہو گیا!",
+  team_share_whatsapp: "واٹس ایپ",
   team_invite_email: "ای میل",
   team_invite_expires: "7 دنوں میں ختم ہو گا",
   team_no_members: "ابھی کوئی ٹیم ممبر نہیں",
@@ -179,6 +227,79 @@ const ur = {
   common_confirm_delete: "کیا آپ واقعی اسے حذف کرنا چاہتے ہیں؟",
   common_pkr: "روپے",
   common_currency_symbol: "Rs.",
+
+  // Invoice Edit / Duplicate
+  inv_duplicate: "نقل بنائیں",
+
+  // Activity Log
+  nav_activity: "سرگرمی لاگ",
+
+  // Backup
+  nav_backup: "ڈیٹا بیک اپ",
+
+  // PWA
+  pwa_install_title: "بِل پرو انسٹال کریں",
+  pwa_install_desc: "آف لائن فوری رسائی کے لیے ہوم اسکرین میں شامل کریں",
+  pwa_install_btn: "ایپ انسٹال کریں",
+
+  // Stock Tracking
+  prod_stock: "اسٹاک",
+
+  // Bulk Actions
+  bulk_selected: "منتخب",
+
+  // Customer Portal
+  portal_link: "پورٹل",
+  portal_copied: "کاپی ہو گیا!",
+  portal_generate: "پورٹل لنک بنائیں",
+
+  // QR Code
+  qr_scan_to_pay: "انوائس دیکھنے کے لیے اسکین کریں",
+
+  // Email Invoice
+  inv_email: "ای میل",
+
+  // Multi-currency
+  settings_currency: "کرنسی",
+  settings_template: "انوائس ٹیمپلیٹ",
+
+  // Invoice Templates
+  tpl_classic: "کلاسک",
+  tpl_modern: "جدید",
+  tpl_minimal: "سادہ",
+
+  // Customer Import
+  cust_import: "درآمد",
+  cust_import_title: "صارفین درآمد کریں",
+  cust_import_upload: "CSV یا ایکسل فائل اپ لوڈ کریں",
+  cust_import_preview: "پیش نظارہ",
+  cust_import_rows: "قطاریں ملیں",
+  cust_import_btn: "سب درآمد کریں",
+  cust_import_success: "صارفین درآمد ہو گئے",
+
+  // Reminders Widget
+  dash_due_soon: "جلد واجب الادا",
+  dash_due_in: "باقی",
+  dash_days: "دن",
+  dash_today: "آج",
+
+  // Audit Trail
+  audit_history: "تاریخچہ",
+  audit_no_history: "ابھی کوئی تاریخچہ نہیں",
+
+  // Subscription
+  sub_title: "سبسکرپشن",
+  sub_current_plan: "موجودہ پلان",
+  sub_trial: "مفت آزمائش",
+  sub_trial_days_left: "دن آزمائش باقی",
+  sub_trial_expired: "آزمائش ختم",
+  sub_active: "فعال",
+  sub_upgrade: "ابھی اپ گریڈ کریں",
+  sub_view_plans: "پلان دیکھیں",
+  sub_contact: "رابطہ کریں",
+  sub_popular: "مقبول ترین",
+  sub_per_month: "/ماہ",
+  nav_admin: "سپر ایڈمن",
 } as const;
 
 export default ur;

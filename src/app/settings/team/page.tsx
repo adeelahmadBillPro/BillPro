@@ -16,14 +16,16 @@ import {
 } from "@/lib/supabase/database";
 import { t, formatDate } from "@/lib/i18n";
 import { hasPermission } from "@/lib/permissions";
+import { useConfirm } from "@/components/ConfirmDialog";
 import type { BusinessMember, BusinessInvite, UserRole } from "@/types";
-import { ArrowLeft, UserPlus, Trash2, Copy, Check, Shield } from "lucide-react";
+import { ArrowLeft, UserPlus, Trash2, Copy, Check, Shield, MessageCircle } from "lucide-react";
 
 const ROLES: UserRole[] = ["admin", "accountant", "viewer"];
 
 export default function TeamPage() {
   const { lang } = useLanguage();
   const { business, user, role, loading: authLoading } = useAuth();
+  const { confirm } = useConfirm();
 
   const [members, setMembers] = useState<BusinessMember[]>([]);
   const [invites, setInvites] = useState<BusinessInvite[]>([]);
@@ -72,7 +74,14 @@ export default function TeamPage() {
   }
 
   async function handleDeleteInvite(id: string) {
-    if (!confirm(t("common_confirm_delete", lang))) return;
+    const ok = await confirm({
+      title: lang === "ur" ? "دعوت منسوخ کریں؟" : "Cancel Invite?",
+      message: lang === "ur" ? "کیا آپ واقعی یہ دعوت منسوخ کرنا چاہتے ہیں؟" : "Are you sure you want to cancel this invite?",
+      confirmText: lang === "ur" ? "منسوخ کریں" : "Cancel Invite",
+      cancelText: lang === "ur" ? "واپس" : "Go Back",
+      variant: "warning",
+    });
+    if (!ok) return;
     await deleteInvite(id);
     loadData();
   }
@@ -83,16 +92,32 @@ export default function TeamPage() {
   }
 
   async function handleRemoveMember(memberId: string) {
-    if (!confirm(t("common_confirm_delete", lang))) return;
+    const ok = await confirm({
+      title: lang === "ur" ? "ممبر ہٹائیں؟" : "Remove Member?",
+      message: lang === "ur" ? "کیا آپ واقعی اس ممبر کو ہٹانا چاہتے ہیں؟" : "Are you sure you want to remove this team member? They will lose access to this business.",
+      confirmText: lang === "ur" ? "ہٹائیں" : "Remove",
+      cancelText: t("common_cancel", lang),
+      variant: "danger",
+    });
+    if (!ok) return;
     await removeMember(memberId);
     loadData();
   }
 
+  function getInviteLink(token: string) {
+    return `${window.location.origin}/auth/invite/${token}`;
+  }
+
   function copyInviteLink(token: string, inviteId: string) {
-    const link = `${window.location.origin}/auth/invite/${token}`;
-    navigator.clipboard.writeText(link);
+    navigator.clipboard.writeText(getInviteLink(token));
     setCopiedId(inviteId);
     setTimeout(() => setCopiedId(null), 2000);
+  }
+
+  function shareWhatsApp(token: string, email: string) {
+    const link = getInviteLink(token);
+    const message = `You're invited to join ${business?.name_en || "our business"} on BillPro! Click here to accept: ${link}`;
+    window.open(`https://wa.me/?text=${encodeURIComponent(message)}`, "_blank");
   }
 
   const roleLabel = (r: UserRole) => t(`role_${r}`, lang);
@@ -222,6 +247,13 @@ export default function TeamPage() {
                         ) : (
                           <><Copy className="w-3.5 h-3.5" /> {t("team_copy_link", lang)}</>
                         )}
+                      </button>
+                      <button
+                        onClick={() => shareWhatsApp(invite.token, invite.email)}
+                        className="flex items-center gap-1.5 px-3 py-1.5 bg-[#25D366] text-white rounded-lg text-xs font-medium hover:bg-[#1da851] transition-colors"
+                      >
+                        <MessageCircle className="w-3.5 h-3.5" />
+                        {t("team_share_whatsapp", lang)}
                       </button>
                       <button
                         onClick={() => handleDeleteInvite(invite.id)}

@@ -17,7 +17,7 @@ interface TopCustomersCardProps {
 
 export default function TopCustomersCard({ customers, lang }: TopCustomersCardProps) {
   return (
-    <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-6">
+    <div className="bg-white rounded-2xl border border-gray-200/60 shadow-sm p-6">
       <h3 className={`text-lg font-semibold text-gray-900 mb-4 ${lang === "ur" ? "font-urdu" : ""}`}>
         {t("dash_top_customers", lang)}
       </h3>

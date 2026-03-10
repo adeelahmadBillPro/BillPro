@@ -5,9 +5,9 @@ import DashboardLayout from "@/components/DashboardLayout";
 import Modal from "@/components/Modal";
 import { useLanguage } from "@/lib/store";
 import { useAuth } from "@/lib/hooks/useAuth";
-import { getPayments, getInvoices, createPayment } from "@/lib/supabase/database";
+import { getPayments, getInvoices, createPayment, logActivity } from "@/lib/supabase/database";
 import { t, formatPKR } from "@/lib/i18n";
-import { Plus, Banknote, CreditCard, Building, Globe } from "lucide-react";
+import { Plus, Banknote, CreditCard, Building, Globe, Download, FileDown, Loader2 } from "lucide-react";
 import { hasPermission } from "@/lib/permissions";
 import type { PaymentMethod } from "@/types";
 
@@ -26,7 +26,7 @@ const methodKeys: Record<string, string> = {
 
 export default function PaymentsPage() {
   const { lang } = useLanguage();
-  const { business, role } = useAuth();
+  const { user, business, role } = useAuth();
   const canCreate = hasPermission(role, "create");
   const [payments, setPayments] = useState<any[]>([]);
   const [invoices, setInvoices] = useState<any[]>([]);
@@ -41,6 +41,29 @@ export default function PaymentsPage() {
     reference_number: "",
     notes: "",
   });
+
+  const [downloadingId, setDownloadingId] = useState<string | null>(null);
+
+  const handleDownloadReceipt = async (payment: any) => {
+    if (!business) return;
+    setDownloadingId(payment.id);
+    try {
+      const { pdf } = await import("@react-pdf/renderer");
+      const { default: ReceiptPDF } = await import("@/lib/pdf/ReceiptPDF");
+      const blob = await pdf(
+        <ReceiptPDF payment={payment} business={business} lang={lang} />
+      ).toBlob();
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `Receipt_${payment.invoice?.invoice_number || payment.id}.pdf`;
+      a.click();
+      URL.revokeObjectURL(url);
+    } catch (err) {
+      console.error("Receipt PDF generation failed:", err);
+    }
+    setDownloadingId(null);
+  };
 
   const loadData = useCallback(async () => {
     if (!business) return;
@@ -62,6 +85,8 @@ export default function PaymentsPage() {
     if (!form.invoice_id || form.amount <= 0) return;
     setSaving(true);
     await createPayment(form);
+    const inv = invoices.find((i: any) => i.id === form.invoice_id);
+    if (user && business) await logActivity(business.id, user.id, "created", "payment", `Rs ${form.amount} for ${inv?.invoice_number || ""}`, form.invoice_id);
     setSaving(false);
     setModalOpen(false);
     setForm({
@@ -75,6 +100,30 @@ export default function PaymentsPage() {
     loadData();
   };
 
+  const handleExportExcel = async () => {
+    const { exportToExcel } = await import("@/lib/reports/excel");
+    exportToExcel(
+      payments.map((p: any) => ({
+        invoice: p.invoice?.invoice_number || "",
+        customer: lang === "ur" ? (p.invoice?.customer?.name_ur || p.invoice?.customer?.name_en || "") : (p.invoice?.customer?.name_en || ""),
+        amount: Number(p.amount),
+        method: t(methodKeys[p.payment_method] || "pay_cash", lang),
+        date: p.payment_date,
+        reference: p.reference_number || "",
+      })),
+      [
+        { key: "invoice", header: "Invoice #", width: 15 },
+        { key: "customer", header: "Customer", width: 25 },
+        { key: "amount", header: "Amount (PKR)", width: 15 },
+        { key: "method", header: "Method", width: 15 },
+        { key: "date", header: "Date", width: 12 },
+        { key: "reference", header: "Reference", width: 18 },
+      ],
+      `Payments_${new Date().toISOString().split("T")[0]}`,
+      "Payments"
+    );
+  };
+
   return (
     <DashboardLayout>
       <div className="space-y-6">
@@ -82,18 +131,27 @@ export default function PaymentsPage() {
           <h1 className={`text-2xl font-bold text-gray-900 ${lang === "ur" ? "font-urdu" : ""}`}>
             {t("pay_title", lang)}
           </h1>
-          {canCreate && (
+          <div className="flex items-center gap-2">
             <button
-              onClick={() => setModalOpen(true)}
-              className="inline-flex items-center gap-2 bg-primary text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-primary-dark transition-colors"
+              onClick={handleExportExcel}
+              className="inline-flex items-center gap-2 border border-gray-200 text-gray-600 px-3 py-2 rounded-lg text-sm font-medium hover:bg-gray-50 transition-colors"
             >
-              <Plus className="w-4 h-4" />
-              {t("pay_add", lang)}
+              <Download className="w-4 h-4" />
+              {t("ledger_export", lang)}
             </button>
-          )}
+            {canCreate && (
+              <button
+                onClick={() => setModalOpen(true)}
+                className="inline-flex items-center gap-2 bg-primary text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-primary-dark transition-colors"
+              >
+                <Plus className="w-4 h-4" />
+                {t("pay_add", lang)}
+              </button>
+            )}
+          </div>
         </div>
 
-        <div className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-x-auto">
+        <div className="bg-white rounded-2xl border border-gray-200/60 shadow-sm overflow-x-auto">
           <table className="w-full">
             <thead>
               <tr className="border-b border-gray-200 bg-gray-50">
@@ -103,13 +161,14 @@ export default function PaymentsPage() {
                 <th className="text-start p-4 text-sm font-medium text-muted">{t("pay_method", lang)}</th>
                 <th className="text-start p-4 text-sm font-medium text-muted">{t("pay_date", lang)}</th>
                 <th className="text-start p-4 text-sm font-medium text-muted">{t("pay_reference", lang)}</th>
+                <th className="text-start p-4 text-sm font-medium text-muted"></th>
               </tr>
             </thead>
             <tbody>
               {loading ? (
-                <tr><td colSpan={6} className="p-8 text-center text-muted text-sm">{t("common_loading", lang)}</td></tr>
+                <tr><td colSpan={7} className="p-8 text-center text-muted text-sm">{t("common_loading", lang)}</td></tr>
               ) : payments.length === 0 ? (
-                <tr><td colSpan={6} className="p-8 text-center text-muted text-sm">{t("common_no_data", lang)}</td></tr>
+                <tr><td colSpan={7} className="p-8 text-center text-muted text-sm">{t("common_no_data", lang)}</td></tr>
               ) : (
                 payments.map((payment: any) => {
                   const MethodIcon = methodIcons[payment.payment_method] || Banknote;
@@ -130,6 +189,21 @@ export default function PaymentsPage() {
                       </td>
                       <td className="p-4 text-sm text-muted">{payment.payment_date}</td>
                       <td className="p-4 text-sm text-muted">{payment.reference_number || "—"}</td>
+                      <td className="p-4">
+                        <button
+                          onClick={() => handleDownloadReceipt(payment)}
+                          disabled={downloadingId === payment.id}
+                          className="inline-flex items-center gap-1.5 text-sm text-primary hover:text-primary-dark font-medium disabled:opacity-50 transition-colors"
+                          title="Download Receipt"
+                        >
+                          {downloadingId === payment.id ? (
+                            <Loader2 className="w-4 h-4 animate-spin" />
+                          ) : (
+                            <FileDown className="w-4 h-4" />
+                          )}
+                          <span className="hidden sm:inline">Receipt</span>
+                        </button>
+                      </td>
                     </tr>
                   );
                 })
@@ -157,7 +231,7 @@ export default function PaymentsPage() {
               ))}
             </select>
           </div>
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">{t("pay_amount", lang)} (PKR) *</label>
               <input
@@ -182,7 +256,7 @@ export default function PaymentsPage() {
               </select>
             </div>
           </div>
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">{t("pay_date", lang)}</label>
               <input

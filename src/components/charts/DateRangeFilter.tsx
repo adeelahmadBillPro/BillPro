@@ -55,15 +55,15 @@ export default function DateRangeFilter({
 }: DateRangeFilterProps) {
   return (
     <div className="flex flex-wrap items-center gap-3">
-      <div className="flex rounded-lg border border-gray-200 overflow-hidden">
+      <div className="flex rounded-xl overflow-hidden bg-white/15 backdrop-blur-sm">
         {presets.map((p) => (
           <button
             key={p.key}
             onClick={() => onPresetChange(p.key)}
             className={`px-3 py-1.5 text-sm font-medium transition-colors ${
               preset === p.key
-                ? "bg-primary text-white"
-                : "bg-white text-gray-600 hover:bg-gray-50"
+                ? "bg-white text-primary-dark"
+                : "text-white/80 hover:text-white hover:bg-white/10"
             }`}
           >
             <span className={lang === "ur" ? "font-urdu" : ""}>{t(p.labelKey, lang)}</span>
@@ -73,19 +73,19 @@ export default function DateRangeFilter({
 
       {preset === "custom" && (
         <div className="flex items-center gap-2">
-          <label className="text-sm text-muted">{t("dash_from", lang)}</label>
+          <label className="text-sm text-white/60">{t("dash_from", lang)}</label>
           <input
             type="date"
             value={startDate}
             onChange={(e) => onStartDateChange(e.target.value)}
-            className="border border-gray-200 rounded-lg px-3 py-1.5 text-sm"
+            className="border border-white/20 bg-white/10 text-white rounded-lg px-3 py-1.5 text-sm"
           />
-          <label className="text-sm text-muted">{t("dash_to", lang)}</label>
+          <label className="text-sm text-white/60">{t("dash_to", lang)}</label>
           <input
             type="date"
             value={endDate}
             onChange={(e) => onEndDateChange(e.target.value)}
-            className="border border-gray-200 rounded-lg px-3 py-1.5 text-sm"
+            className="border border-white/20 bg-white/10 text-white rounded-lg px-3 py-1.5 text-sm"
           />
         </div>
       )}

@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="192" height="192" viewBox="0 0 192 192">
+  <rect width="192" height="192" rx="35" fill="#0f766e"/>
+  <rect x="62.5" y="52.449999999999996" width="67" height="87.10000000000001" rx="6" fill="white" opacity="0.95"/>
+  <line x1="75.9" y1="82.935" x2="116.1" y2="82.935" stroke="#0f766e" stroke-width="4" stroke-linecap="round"/>
+  <line x1="75.9" y1="96" x2="116.1" y2="96" stroke="#0f766e" stroke-width="4" stroke-linecap="round"/>
+  <line x1="75.9" y1="109.065" x2="98.68499999999999" y2="109.065" stroke="#0f766e" stroke-width="4" stroke-linecap="round"/>
+  <text x="96" y="71.612" text-anchor="middle" font-family="system-ui,sans-serif" font-weight="bold" font-size="15" fill="#0f766e">BP</text>
+</svg>

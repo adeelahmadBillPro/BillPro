@@ -68,16 +68,27 @@ export default function SignupPage() {
 
       if (user) {
         // Step 4: Create business
-        const { error: bizError } = await supabase.from("businesses").insert({
+        const { data: bizData, error: bizError } = await supabase.from("businesses").insert({
           user_id: user.id,
           name_en: businessNameEn.trim(),
           name_ur: businessNameUr.trim(),
           email: email,
-        });
+        }).select().single();
 
         if (bizError) {
           console.error("Business creation error:", bizError);
           setError("Account created but business setup failed. Go to Settings to complete setup. / اکاؤنٹ بن گیا لیکن کاروبار کی ترتیب ناکام رہی");
+        }
+
+        // Step 5: Create trial subscription
+        if (bizData) {
+          const trialEnd = new Date();
+          trialEnd.setDate(trialEnd.getDate() + 14);
+          await supabase.from("subscriptions").insert({
+            business_id: bizData.id,
+            status: "trialing",
+            trial_ends_at: trialEnd.toISOString(),
+          });
         }
       }
 
@@ -91,7 +102,7 @@ export default function SignupPage() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-primary/5 to-secondary/5 p-4">
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-primary/10 via-surface to-secondary/10 p-4">
       <div className="w-full max-w-md">
         <div className="text-center mb-8">
           <div className="w-16 h-16 bg-primary rounded-2xl flex items-center justify-center mx-auto mb-4">
@@ -166,7 +177,7 @@ export default function SignupPage() {
             <button
               type="submit"
               disabled={loading}
-              className="w-full bg-primary text-white py-2.5 rounded-lg text-sm font-semibold hover:bg-primary-dark transition-colors disabled:opacity-50"
+              className="w-full bg-primary text-white py-2.5 rounded-xl text-sm font-semibold hover:bg-primary-dark transition-colors disabled:opacity-50 shadow-sm shadow-primary/20"
             >
               {loading ? "Loading..." : "Sign Up / سائن اپ"}
             </button>

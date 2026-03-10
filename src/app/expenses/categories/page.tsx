@@ -15,6 +15,8 @@ import {
 } from "@/lib/supabase/database";
 import { t } from "@/lib/i18n";
 import { hasPermission } from "@/lib/permissions";
+import { useToast } from "@/components/Toast";
+import { useConfirm } from "@/components/ConfirmDialog";
 import type { ExpenseCategory } from "@/types";
 import { Plus, Pencil, Trash2, ArrowLeft } from "lucide-react";
 
@@ -23,6 +25,8 @@ const COLORS = ["#ef4444", "#f59e0b", "#3b82f6", "#8b5cf6", "#10b981", "#ec4899"
 export default function CategoriesPage() {
   const { lang } = useLanguage();
   const { business, role, loading: authLoading } = useAuth();
+  const { showToast } = useToast();
+  const { confirm } = useConfirm();
   const canCreate = hasPermission(role, "create");
   const canDelete = hasPermission(role, "delete");
   const [categories, setCategories] = useState<ExpenseCategory[]>([]);
@@ -79,12 +83,20 @@ export default function CategoriesPage() {
   }
 
   async function handleDelete(id: string) {
-    if (!confirm(t("common_confirm_delete", lang))) return;
+    const ok = await confirm({
+      title: lang === "ur" ? "زمرہ حذف کریں؟" : "Delete Category?",
+      message: lang === "ur" ? "کیا آپ واقعی یہ زمرہ حذف کرنا چاہتے ہیں؟" : "Are you sure you want to delete this category?",
+      confirmText: lang === "ur" ? "حذف کریں" : "Delete",
+      cancelText: t("common_cancel", lang),
+      variant: "danger",
+    });
+    if (!ok) return;
     const { error } = await deleteExpenseCategory(id);
     if (error) {
-      alert("Cannot delete: category has expenses. Reassign them first.");
+      showToast(lang === "ur" ? "حذف نہیں ہو سکتا: اس زمرے میں اخراجات ہیں" : "Cannot delete: category has expenses. Reassign them first.", "error");
       return;
     }
+    showToast(lang === "ur" ? "زمرہ حذف ہو گیا" : "Category deleted", "success");
     loadCategories();
   }
 
