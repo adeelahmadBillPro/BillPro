@@ -14,6 +14,7 @@ import {
   ensureDefaultCategories,
 } from "@/lib/supabase/database";
 import { t } from "@/lib/i18n";
+import { hasPermission } from "@/lib/permissions";
 import type { ExpenseCategory } from "@/types";
 import { Plus, Pencil, Trash2, ArrowLeft } from "lucide-react";
 
@@ -21,7 +22,9 @@ const COLORS = ["#ef4444", "#f59e0b", "#3b82f6", "#8b5cf6", "#10b981", "#ec4899"
 
 export default function CategoriesPage() {
   const { lang } = useLanguage();
-  const { business, loading: authLoading } = useAuth();
+  const { business, role, loading: authLoading } = useAuth();
+  const canCreate = hasPermission(role, "create");
+  const canDelete = hasPermission(role, "delete");
   const [categories, setCategories] = useState<ExpenseCategory[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -97,13 +100,15 @@ export default function CategoriesPage() {
               {t("exp_categories", lang)}
             </h1>
           </div>
-          <button
-            onClick={openAdd}
-            className="flex items-center gap-2 px-4 py-2 bg-primary text-white rounded-lg text-sm font-medium hover:bg-primary-dark transition-colors"
-          >
-            <Plus className="w-4 h-4" />
-            <span className={lang === "ur" ? "font-urdu" : ""}>{t("exp_add_category", lang)}</span>
-          </button>
+          {canCreate && (
+            <button
+              onClick={openAdd}
+              className="flex items-center gap-2 px-4 py-2 bg-primary text-white rounded-lg text-sm font-medium hover:bg-primary-dark transition-colors"
+            >
+              <Plus className="w-4 h-4" />
+              <span className={lang === "ur" ? "font-urdu" : ""}>{t("exp_add_category", lang)}</span>
+            </button>
+          )}
         </div>
 
         <div className="bg-white rounded-xl border border-gray-200 shadow-sm">
@@ -125,12 +130,16 @@ export default function CategoriesPage() {
                     </div>
                   </div>
                   <div className="flex gap-2">
-                    <button onClick={() => openEdit(cat)} className="p-1.5 text-muted hover:text-primary rounded-md hover:bg-gray-100">
-                      <Pencil className="w-4 h-4" />
-                    </button>
-                    <button onClick={() => handleDelete(cat.id)} className="p-1.5 text-muted hover:text-danger rounded-md hover:bg-red-50">
-                      <Trash2 className="w-4 h-4" />
-                    </button>
+                    {canCreate && (
+                      <button onClick={() => openEdit(cat)} className="p-1.5 text-muted hover:text-primary rounded-md hover:bg-gray-100">
+                        <Pencil className="w-4 h-4" />
+                      </button>
+                    )}
+                    {canDelete && (
+                      <button onClick={() => handleDelete(cat.id)} className="p-1.5 text-muted hover:text-danger rounded-md hover:bg-red-50">
+                        <Trash2 className="w-4 h-4" />
+                      </button>
+                    )}
                   </div>
                 </div>
               ))}

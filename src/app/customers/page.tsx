@@ -8,6 +8,7 @@ import { useAuth } from "@/lib/hooks/useAuth";
 import { getCustomers, createCustomer, updateCustomer, deleteCustomer } from "@/lib/supabase/database";
 import { t, formatPKR } from "@/lib/i18n";
 import { Plus, Search, Edit, Trash2, Phone, Mail } from "lucide-react";
+import { hasPermission } from "@/lib/permissions";
 import type { Customer } from "@/types";
 
 const emptyForm = {
@@ -17,7 +18,9 @@ const emptyForm = {
 
 export default function CustomersPage() {
   const { lang } = useLanguage();
-  const { business } = useAuth();
+  const { business, role } = useAuth();
+  const canCreate = hasPermission(role, "create");
+  const canDelete = hasPermission(role, "delete");
   const [customers, setCustomers] = useState<Customer[]>([]);
   const [search, setSearch] = useState("");
   const [loading, setLoading] = useState(true);
@@ -95,13 +98,15 @@ export default function CustomersPage() {
           <h1 className={`text-2xl font-bold text-gray-900 ${lang === "ur" ? "font-urdu" : ""}`}>
             {t("cust_title", lang)}
           </h1>
-          <button
-            onClick={openAdd}
-            className="inline-flex items-center gap-2 bg-primary text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-primary-dark transition-colors"
-          >
-            <Plus className="w-4 h-4" />
-            {t("cust_add", lang)}
-          </button>
+          {canCreate && (
+            <button
+              onClick={openAdd}
+              className="inline-flex items-center gap-2 bg-primary text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-primary-dark transition-colors"
+            >
+              <Plus className="w-4 h-4" />
+              {t("cust_add", lang)}
+            </button>
+          )}
         </div>
 
         {/* Search */}
@@ -135,18 +140,22 @@ export default function CustomersPage() {
                     )}
                   </div>
                   <div className="flex gap-1">
-                    <button
-                      onClick={() => openEdit(customer)}
-                      className="p-1.5 text-muted hover:text-secondary rounded-md hover:bg-gray-100"
-                    >
-                      <Edit className="w-4 h-4" />
-                    </button>
-                    <button
-                      onClick={() => handleDelete(customer.id)}
-                      className="p-1.5 text-muted hover:text-danger rounded-md hover:bg-gray-100"
-                    >
-                      <Trash2 className="w-4 h-4" />
-                    </button>
+                    {canCreate && (
+                      <button
+                        onClick={() => openEdit(customer)}
+                        className="p-1.5 text-muted hover:text-secondary rounded-md hover:bg-gray-100"
+                      >
+                        <Edit className="w-4 h-4" />
+                      </button>
+                    )}
+                    {canDelete && (
+                      <button
+                        onClick={() => handleDelete(customer.id)}
+                        className="p-1.5 text-muted hover:text-danger rounded-md hover:bg-gray-100"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </button>
+                    )}
                   </div>
                 </div>
 

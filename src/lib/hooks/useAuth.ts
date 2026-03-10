@@ -4,11 +4,12 @@ import { useState, useEffect, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import type { User } from "@supabase/supabase-js";
-import type { Business } from "@/types";
+import type { Business, UserRole } from "@/types";
 
 export function useAuth() {
   const [user, setUser] = useState<User | null>(null);
   const [business, setBusiness] = useState<Business | null>(null);
+  const [role, setRole] = useState<UserRole | null>(null);
   const [loading, setLoading] = useState(true);
   const router = useRouter();
 
@@ -20,12 +21,12 @@ export function useAuth() {
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       (event, session) => {
         if (!isMounted) return;
-        console.log("[useAuth] authChange:", event, session ? "has session" : "no session");
         if (session?.user) {
           setUser(session.user);
         } else {
           setUser(null);
           setBusiness(null);
+          setRole(null);
           setLoading(false);
         }
       }
@@ -37,7 +38,7 @@ export function useAuth() {
     };
   }, []);
 
-  // Effect 2: Fetch business when user changes (separate from auth callback)
+  // Effect 2: Fetch business + role via business_members when user changes
   useEffect(() => {
     if (!user) return;
     const supabase = createClient();
@@ -47,8 +48,36 @@ export function useAuth() {
 
     async function loadBusiness() {
       try {
-        console.log("[useAuth] Fetching business for user:", userId);
-        const { data: bizData, error: fetchErr } = await supabase
+        // First try business_members (multi-user path)
+        const { data: membership } = await supabase
+          .from("business_members")
+          .select("business_id, role")
+          .eq("user_id", userId)
+          .limit(1)
+          .single();
+
+        if (cancelled) return;
+
+        if (membership) {
+          // Found membership — fetch the business
+          const { data: bizData } = await supabase
+            .from("businesses")
+            .select("*")
+            .eq("id", membership.business_id)
+            .single();
+
+          if (cancelled) return;
+
+          if (bizData) {
+            setBusiness(bizData);
+            setRole(membership.role as UserRole);
+            setLoading(false);
+            return;
+          }
+        }
+
+        // Fallback: check if user owns a business directly (pre-migration)
+        const { data: bizData } = await supabase
           .from("businesses")
           .select("*")
           .eq("user_id", userId)
@@ -56,19 +85,15 @@ export function useAuth() {
 
         if (cancelled) return;
 
-        if (fetchErr) {
-          console.warn("[useAuth] Business fetch error:", fetchErr.message);
-        }
-
         if (bizData) {
           setBusiness(bizData);
+          setRole("owner");
           setLoading(false);
           return;
         }
 
-        // No business found — auto-create one
-        console.log("[useAuth] No business found, creating...");
-        const { data: newBiz, error: insertErr } = await supabase
+        // No business found — auto-create one + membership
+        const { data: newBiz } = await supabase
           .from("businesses")
           .insert({
             user_id: userId,
@@ -81,11 +106,16 @@ export function useAuth() {
 
         if (cancelled) return;
 
-        if (insertErr) {
-          console.error("[useAuth] Business create error:", insertErr.message);
+        if (newBiz) {
+          // Create owner membership
+          await supabase.from("business_members").insert({
+            business_id: newBiz.id,
+            user_id: userId,
+            role: "owner",
+          });
+          setBusiness(newBiz);
+          setRole("owner");
         }
-
-        if (newBiz) setBusiness(newBiz);
       } catch (err) {
         console.error("[useAuth] loadBusiness exception:", err);
       } finally {
@@ -102,6 +132,7 @@ export function useAuth() {
     await supabase.auth.signOut();
     setUser(null);
     setBusiness(null);
+    setRole(null);
     router.push("/auth/login");
   }, [router]);
 
@@ -118,20 +149,49 @@ export function useAuth() {
       })
       .select()
       .single();
-    if (!error && data) setBusiness(data);
+    if (!error && data) {
+      // Create owner membership
+      await supabase.from("business_members").insert({
+        business_id: data.id,
+        user_id: user.id,
+        role: "owner",
+      });
+      setBusiness(data);
+      setRole("owner");
+    }
     return { data, error };
   }, [user]);
 
   const fetchBusiness = useCallback(async (userId: string) => {
     const supabase = createClient();
+    const { data: membership } = await supabase
+      .from("business_members")
+      .select("business_id, role")
+      .eq("user_id", userId)
+      .limit(1)
+      .single();
+
+    if (membership) {
+      const { data } = await supabase
+        .from("businesses")
+        .select("*")
+        .eq("id", membership.business_id)
+        .single();
+      setBusiness(data);
+      setRole(membership.role as UserRole);
+      return data;
+    }
+
+    // Fallback
     const { data } = await supabase
       .from("businesses")
       .select("*")
       .eq("user_id", userId)
       .single();
     setBusiness(data);
+    setRole("owner");
     return data;
   }, []);
 
-  return { user, business, loading, signOut, createBusiness, fetchBusiness };
+  return { user, business, role, loading, signOut, createBusiness, fetchBusiness };
 }

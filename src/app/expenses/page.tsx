@@ -17,6 +17,7 @@ import {
   getExpenseStats,
 } from "@/lib/supabase/database";
 import { t, formatPKR, formatDate } from "@/lib/i18n";
+import { hasPermission } from "@/lib/permissions";
 import type { Expense, ExpenseCategory, PaymentMethod } from "@/types";
 import { Plus, Search, Pencil, Trash2, Settings2 } from "lucide-react";
 
@@ -29,7 +30,9 @@ const PAYMENT_METHODS: { value: PaymentMethod; labelKey: string }[] = [
 
 export default function ExpensesPage() {
   const { lang } = useLanguage();
-  const { business, loading: authLoading } = useAuth();
+  const { business, role, loading: authLoading } = useAuth();
+  const canCreate = hasPermission(role, "create");
+  const canDelete = hasPermission(role, "delete");
 
   const [expenses, setExpenses] = useState<any[]>([]);
   const [categories, setCategories] = useState<ExpenseCategory[]>([]);
@@ -167,13 +170,15 @@ export default function ExpensesPage() {
               <Settings2 className="w-4 h-4" />
               <span className={lang === "ur" ? "font-urdu" : ""}>{t("exp_categories", lang)}</span>
             </Link>
-            <button
-              onClick={openAdd}
-              className="flex items-center gap-2 px-4 py-2 bg-primary text-white rounded-lg text-sm font-medium hover:bg-primary-dark transition-colors"
-            >
-              <Plus className="w-4 h-4" />
-              <span className={lang === "ur" ? "font-urdu" : ""}>{t("exp_add", lang)}</span>
-            </button>
+            {canCreate && (
+              <button
+                onClick={openAdd}
+                className="flex items-center gap-2 px-4 py-2 bg-primary text-white rounded-lg text-sm font-medium hover:bg-primary-dark transition-colors"
+              >
+                <Plus className="w-4 h-4" />
+                <span className={lang === "ur" ? "font-urdu" : ""}>{t("exp_add", lang)}</span>
+              </button>
+            )}
           </div>
         </div>
 
@@ -258,12 +263,16 @@ export default function ExpensesPage() {
                     </td>
                     <td className="p-4">
                       <div className="flex gap-2">
-                        <button onClick={() => openEdit(exp)} className="p-1.5 text-muted hover:text-primary rounded-md hover:bg-gray-100">
-                          <Pencil className="w-4 h-4" />
-                        </button>
-                        <button onClick={() => handleDelete(exp.id)} className="p-1.5 text-muted hover:text-danger rounded-md hover:bg-red-50">
-                          <Trash2 className="w-4 h-4" />
-                        </button>
+                        {canCreate && (
+                          <button onClick={() => openEdit(exp)} className="p-1.5 text-muted hover:text-primary rounded-md hover:bg-gray-100">
+                            <Pencil className="w-4 h-4" />
+                          </button>
+                        )}
+                        {canDelete && (
+                          <button onClick={() => handleDelete(exp.id)} className="p-1.5 text-muted hover:text-danger rounded-md hover:bg-red-50">
+                            <Trash2 className="w-4 h-4" />
+                          </button>
+                        )}
                       </div>
                     </td>
                   </tr>

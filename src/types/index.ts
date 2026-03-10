@@ -5,6 +5,7 @@
 export type Language = "en" | "ur";
 export type InvoiceStatus = "draft" | "sent" | "paid" | "overdue" | "cancelled";
 export type PaymentMethod = "cash" | "bank_transfer" | "cheque" | "online";
+export type UserRole = "owner" | "admin" | "accountant" | "viewer";
 
 // --- User / Business ---
 export interface Business {
@@ -110,6 +111,30 @@ export interface Expense {
   created_at: string;
   updated_at: string;
   category?: ExpenseCategory;
+}
+
+// --- Business Member ---
+export interface BusinessMember {
+  id: string;
+  business_id: string;
+  user_id: string;
+  role: UserRole;
+  invited_by: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+// --- Business Invite ---
+export interface BusinessInvite {
+  id: string;
+  business_id: string;
+  email: string;
+  role: UserRole;
+  token: string;
+  invited_by: string;
+  accepted_at: string | null;
+  expires_at: string;
+  created_at: string;
 }
 
 // --- Dashboard Stats ---

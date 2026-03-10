@@ -8,6 +8,7 @@ import { useAuth } from "@/lib/hooks/useAuth";
 import { getPayments, getInvoices, createPayment } from "@/lib/supabase/database";
 import { t, formatPKR } from "@/lib/i18n";
 import { Plus, Banknote, CreditCard, Building, Globe } from "lucide-react";
+import { hasPermission } from "@/lib/permissions";
 import type { PaymentMethod } from "@/types";
 
 const methodIcons: Record<string, any> = {
@@ -25,7 +26,8 @@ const methodKeys: Record<string, string> = {
 
 export default function PaymentsPage() {
   const { lang } = useLanguage();
-  const { business } = useAuth();
+  const { business, role } = useAuth();
+  const canCreate = hasPermission(role, "create");
   const [payments, setPayments] = useState<any[]>([]);
   const [invoices, setInvoices] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
@@ -80,13 +82,15 @@ export default function PaymentsPage() {
           <h1 className={`text-2xl font-bold text-gray-900 ${lang === "ur" ? "font-urdu" : ""}`}>
             {t("pay_title", lang)}
           </h1>
-          <button
-            onClick={() => setModalOpen(true)}
-            className="inline-flex items-center gap-2 bg-primary text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-primary-dark transition-colors"
-          >
-            <Plus className="w-4 h-4" />
-            {t("pay_add", lang)}
-          </button>
+          {canCreate && (
+            <button
+              onClick={() => setModalOpen(true)}
+              className="inline-flex items-center gap-2 bg-primary text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-primary-dark transition-colors"
+            >
+              <Plus className="w-4 h-4" />
+              {t("pay_add", lang)}
+            </button>
+          )}
         </div>
 
         <div className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-x-auto">

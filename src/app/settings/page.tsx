@@ -1,16 +1,20 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import Link from "next/link";
 import DashboardLayout from "@/components/DashboardLayout";
 import { useLanguage } from "@/lib/store";
 import { useAuth } from "@/lib/hooks/useAuth";
 import { createClient } from "@/lib/supabase/client";
 import { t } from "@/lib/i18n";
-import { Building, User, Globe, Check } from "lucide-react";
+import { hasPermission } from "@/lib/permissions";
+import { Building, User, Globe, Check, Users } from "lucide-react";
 
 export default function SettingsPage() {
   const { lang } = useLanguage();
-  const { business, user, fetchBusiness } = useAuth();
+  const { business, user, role, fetchBusiness } = useAuth();
+  const canEditSettings = hasPermission(role, "edit_settings");
+  const canManageTeam = hasPermission(role, "manage_team");
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
   const [form, setForm] = useState({
@@ -53,6 +57,24 @@ export default function SettingsPage() {
           {t("nav_settings", lang)}
         </h1>
 
+        {/* Team Management Link */}
+        <Link
+          href="/settings/team"
+          className="flex items-center gap-4 bg-white rounded-xl border border-gray-200 shadow-sm p-6 hover:shadow-md hover:border-gray-300 transition-all"
+        >
+          <div className="w-12 h-12 bg-primary/10 rounded-lg flex items-center justify-center">
+            <Users className="w-6 h-6 text-primary" />
+          </div>
+          <div>
+            <h2 className={`text-lg font-semibold text-gray-900 ${lang === "ur" ? "font-urdu" : ""}`}>
+              {t("team_title", lang)}
+            </h2>
+            <p className="text-sm text-muted">
+              {lang === "ur" ? "ٹیم ممبرز کا انتظام اور دعوتیں" : "Manage team members and invitations"}
+            </p>
+          </div>
+        </Link>
+
         {/* Business Info */}
         <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-6 space-y-4">
           <div className="flex items-center gap-2 mb-2">
@@ -65,42 +87,50 @@ export default function SettingsPage() {
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">Business Name (English)</label>
               <input type="text" value={form.name_en} onChange={(e) => setForm({ ...form, name_en: e.target.value })}
-                className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/20" />
+                disabled={!canEditSettings}
+                className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 disabled:bg-gray-50 disabled:text-muted" />
             </div>
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">کاروبار کا نام (اردو)</label>
               <input type="text" dir="rtl" value={form.name_ur} onChange={(e) => setForm({ ...form, name_ur: e.target.value })}
-                className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm font-urdu focus:outline-none focus:ring-2 focus:ring-primary/20" />
+                disabled={!canEditSettings}
+                className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm font-urdu focus:outline-none focus:ring-2 focus:ring-primary/20 disabled:bg-gray-50 disabled:text-muted" />
             </div>
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">Address (English)</label>
               <input type="text" value={form.address_en} onChange={(e) => setForm({ ...form, address_en: e.target.value })}
-                className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/20" />
+                disabled={!canEditSettings}
+                className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 disabled:bg-gray-50 disabled:text-muted" />
             </div>
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">پتہ (اردو)</label>
               <input type="text" dir="rtl" value={form.address_ur} onChange={(e) => setForm({ ...form, address_ur: e.target.value })}
-                className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm font-urdu focus:outline-none focus:ring-2 focus:ring-primary/20" />
+                disabled={!canEditSettings}
+                className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm font-urdu focus:outline-none focus:ring-2 focus:ring-primary/20 disabled:bg-gray-50 disabled:text-muted" />
             </div>
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">Phone</label>
               <input type="tel" value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value })} placeholder="0300-1234567"
-                className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/20" />
+                disabled={!canEditSettings}
+                className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 disabled:bg-gray-50 disabled:text-muted" />
             </div>
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">NTN Number</label>
               <input type="text" value={form.ntn_number} onChange={(e) => setForm({ ...form, ntn_number: e.target.value })} placeholder="National Tax Number"
-                className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/20" />
+                disabled={!canEditSettings}
+                className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 disabled:bg-gray-50 disabled:text-muted" />
             </div>
           </div>
-          <button
-            onClick={handleSave}
-            disabled={saving}
-            className="inline-flex items-center gap-2 bg-primary text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-primary-dark transition-colors disabled:opacity-50"
-          >
-            {saved ? <><Check className="w-4 h-4" /> {lang === "ur" ? "محفوظ ہو گیا!" : "Saved!"}</> :
-             saving ? t("common_loading", lang) : t("common_save", lang)}
-          </button>
+          {canEditSettings && (
+            <button
+              onClick={handleSave}
+              disabled={saving}
+              className="inline-flex items-center gap-2 bg-primary text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-primary-dark transition-colors disabled:opacity-50"
+            >
+              {saved ? <><Check className="w-4 h-4" /> {lang === "ur" ? "محفوظ ہو گیا!" : "Saved!"}</> :
+               saving ? t("common_loading", lang) : t("common_save", lang)}
+            </button>
+          )}
         </div>
 
         {/* Profile */}
@@ -116,6 +146,16 @@ export default function SettingsPage() {
             <input type="email" value={user?.email || ""} disabled
               className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm bg-gray-50 text-muted" />
           </div>
+          {role && (
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                {lang === "ur" ? "کردار" : "Role"}
+              </label>
+              <span className="inline-flex items-center px-3 py-1.5 rounded-lg text-sm font-medium bg-primary/10 text-primary capitalize">
+                {t(`role_${role}`, lang)}
+              </span>
+            </div>
+          )}
         </div>
 
         {/* Language */}

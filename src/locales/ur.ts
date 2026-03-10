@@ -132,6 +132,28 @@ const ur = {
   rpt_no_data: "منتخب مدت کا کوئی ڈیٹا نہیں",
   rpt_back: "رپورٹس پر واپس",
 
+  // Team / Roles
+  team_title: "ٹیم ممبرز",
+  team_invite: "ممبر مدعو کریں",
+  team_role: "کردار",
+  team_member_since: "ممبر بنے",
+  team_remove: "ہٹائیں",
+  team_change_role: "کردار تبدیل کریں",
+  team_invite_link: "دعوتی لنک",
+  team_copy_link: "لنک کاپی کریں",
+  team_link_copied: "لنک کاپی ہو گیا!",
+  team_invite_email: "ای میل",
+  team_invite_expires: "7 دنوں میں ختم ہو گا",
+  team_no_members: "ابھی کوئی ٹیم ممبر نہیں",
+  team_pending_invites: "زیر التوا دعوتیں",
+  team_no_invites: "کوئی زیر التوا دعوت نہیں",
+  team_cancel_invite: "منسوخ",
+  team_you: "آپ",
+  role_owner: "مالک",
+  role_admin: "ایڈمن",
+  role_accountant: "اکاؤنٹنٹ",
+  role_viewer: "ناظر",
+
   // Auth
   auth_login: "لاگ ان",
   auth_signup: "سائن اپ",

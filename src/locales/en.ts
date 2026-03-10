@@ -132,6 +132,28 @@ const en = {
   rpt_no_data: "No data for selected range",
   rpt_back: "Back to Reports",
 
+  // Team / Roles
+  team_title: "Team Members",
+  team_invite: "Invite Member",
+  team_role: "Role",
+  team_member_since: "Member since",
+  team_remove: "Remove",
+  team_change_role: "Change Role",
+  team_invite_link: "Invite Link",
+  team_copy_link: "Copy Link",
+  team_link_copied: "Link copied!",
+  team_invite_email: "Email",
+  team_invite_expires: "Expires in 7 days",
+  team_no_members: "No team members yet",
+  team_pending_invites: "Pending Invites",
+  team_no_invites: "No pending invites",
+  team_cancel_invite: "Cancel",
+  team_you: "You",
+  role_owner: "Owner",
+  role_admin: "Admin",
+  role_accountant: "Accountant",
+  role_viewer: "Viewer",
+
   // Auth
   auth_login: "Login",
   auth_signup: "Sign Up",

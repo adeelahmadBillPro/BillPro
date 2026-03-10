@@ -9,11 +9,14 @@ import { useAuth } from "@/lib/hooks/useAuth";
 import { getInvoices, updateInvoiceStatus, deleteInvoice } from "@/lib/supabase/database";
 import { t, formatPKR } from "@/lib/i18n";
 import { Plus, Search, Filter, Eye, Trash2, CheckCircle } from "lucide-react";
+import { hasPermission } from "@/lib/permissions";
 import type { InvoiceStatus } from "@/types";
 
 export default function InvoicesPage() {
   const { lang } = useLanguage();
-  const { business } = useAuth();
+  const { business, role } = useAuth();
+  const canCreate = hasPermission(role, "create");
+  const canDelete = hasPermission(role, "delete");
   const [invoices, setInvoices] = useState<any[]>([]);
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("all");
@@ -58,13 +61,15 @@ export default function InvoicesPage() {
           <h1 className={`text-2xl font-bold text-gray-900 ${lang === "ur" ? "font-urdu" : ""}`}>
             {t("inv_title", lang)}
           </h1>
-          <Link
-            href="/invoices/new"
-            className="inline-flex items-center gap-2 bg-primary text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-primary-dark transition-colors"
-          >
-            <Plus className="w-4 h-4" />
-            {t("inv_create", lang)}
-          </Link>
+          {canCreate && (
+            <Link
+              href="/invoices/new"
+              className="inline-flex items-center gap-2 bg-primary text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-primary-dark transition-colors"
+            >
+              <Plus className="w-4 h-4" />
+              {t("inv_create", lang)}
+            </Link>
+          )}
         </div>
 
         <div className="flex flex-col sm:flex-row gap-4">
@@ -125,7 +130,7 @@ export default function InvoicesPage() {
                     <td className="p-4"><StatusBadge status={invoice.status as InvoiceStatus} lang={lang} /></td>
                     <td className="p-4">
                       <div className="flex items-center gap-2">
-                        {invoice.status !== "paid" && (
+                        {canCreate && invoice.status !== "paid" && (
                           <button
                             onClick={() => handleMarkPaid(invoice.id)}
                             className="p-1.5 text-muted hover:text-success rounded-md hover:bg-green-50"
@@ -137,12 +142,14 @@ export default function InvoicesPage() {
                         <Link href={`/invoices/${invoice.id}`} className="p-1.5 text-muted hover:text-primary rounded-md hover:bg-gray-100">
                           <Eye className="w-4 h-4" />
                         </Link>
-                        <button
-                          onClick={() => handleDelete(invoice.id)}
-                          className="p-1.5 text-muted hover:text-danger rounded-md hover:bg-gray-100"
-                        >
-                          <Trash2 className="w-4 h-4" />
-                        </button>
+                        {canDelete && (
+                          <button
+                            onClick={() => handleDelete(invoice.id)}
+                            className="p-1.5 text-muted hover:text-danger rounded-md hover:bg-gray-100"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </button>
+                        )}
                       </div>
                     </td>
                   </tr>

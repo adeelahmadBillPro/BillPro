@@ -1,5 +1,5 @@
 import { createClient } from "./client";
-import type { Customer, Invoice, InvoiceItem, Payment, InvoiceStatus, Expense, ExpenseCategory } from "@/types";
+import type { Customer, Invoice, InvoiceItem, Payment, InvoiceStatus, Expense, ExpenseCategory, BusinessMember, BusinessInvite, UserRole } from "@/types";
 
 function getClient() {
   return createClient();
@@ -461,4 +461,145 @@ export async function getExpenseStats(businessId: string) {
   }
 
   return { total: totalAll, this_month: totalThisMonth };
+}
+
+// ============================================
+// TEAM MEMBERS
+// ============================================
+
+export async function getBusinessMembers(businessId: string) {
+  const { data, error } = await getClient()
+    .from("business_members")
+    .select("*")
+    .eq("business_id", businessId)
+    .order("created_at");
+  return { data: data as BusinessMember[] | null, error };
+}
+
+export async function updateMemberRole(memberId: string, role: UserRole) {
+  const { data, error } = await getClient()
+    .from("business_members")
+    .update({ role })
+    .eq("id", memberId)
+    .select()
+    .single();
+  return { data: data as BusinessMember | null, error };
+}
+
+export async function removeMember(memberId: string) {
+  const { error } = await getClient()
+    .from("business_members")
+    .delete()
+    .eq("id", memberId);
+  return { error };
+}
+
+// ============================================
+// INVITES
+// ============================================
+
+function generateToken(): string {
+  const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
+  let token = "";
+  for (let i = 0; i < 48; i++) {
+    token += chars.charAt(Math.floor(Math.random() * chars.length));
+  }
+  return token;
+}
+
+export async function getBusinessInvites(businessId: string) {
+  const { data, error } = await getClient()
+    .from("business_invites")
+    .select("*")
+    .eq("business_id", businessId)
+    .is("accepted_at", null)
+    .order("created_at", { ascending: false });
+  return { data: data as BusinessInvite[] | null, error };
+}
+
+export async function createInvite(businessId: string, email: string, role: UserRole, invitedBy: string) {
+  const token = generateToken();
+  const { data, error } = await getClient()
+    .from("business_invites")
+    .insert({
+      business_id: businessId,
+      email,
+      role,
+      token,
+      invited_by: invitedBy,
+    })
+    .select()
+    .single();
+  return { data: data as BusinessInvite | null, error };
+}
+
+export async function deleteInvite(inviteId: string) {
+  const { error } = await getClient()
+    .from("business_invites")
+    .delete()
+    .eq("id", inviteId);
+  return { error };
+}
+
+export async function getInviteByToken(token: string) {
+  const { data, error } = await getClient()
+    .from("business_invites")
+    .select("*, business:businesses(id, name_en, name_ur)")
+    .eq("token", token)
+    .is("accepted_at", null)
+    .single();
+  return { data, error };
+}
+
+export async function acceptInvite(token: string, userId: string) {
+  // Get the invite
+  const { data: invite, error: fetchErr } = await getClient()
+    .from("business_invites")
+    .select("*")
+    .eq("token", token)
+    .is("accepted_at", null)
+    .single();
+
+  if (fetchErr || !invite) return { error: fetchErr || new Error("Invite not found") };
+
+  // Check if expired
+  if (new Date(invite.expires_at) < new Date()) {
+    return { error: new Error("Invite expired") };
+  }
+
+  // Add user to business_members
+  const { error: memberErr } = await getClient()
+    .from("business_members")
+    .insert({
+      business_id: invite.business_id,
+      user_id: userId,
+      role: invite.role,
+      invited_by: invite.invited_by,
+    });
+
+  if (memberErr) return { error: memberErr };
+
+  // Mark invite as accepted
+  await getClient()
+    .from("business_invites")
+    .update({ accepted_at: new Date().toISOString() })
+    .eq("id", invite.id);
+
+  return { error: null, businessId: invite.business_id };
+}
+
+// Get user email from auth (for display in member list)
+export async function getUserEmails(userIds: string[]) {
+  // We can't query auth.users directly from client, so we use a workaround:
+  // Look up businesses created by these users to get their emails
+  const { data } = await getClient()
+    .from("businesses")
+    .select("user_id, email")
+    .in("user_id", userIds);
+
+  const map: Record<string, string> = {};
+  for (const biz of data || []) {
+    map[biz.user_id] = biz.email;
+  }
+  return map;
 }
